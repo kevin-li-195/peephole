@@ -1,0 +1,3 @@
+#! /bin/csh
+# jas - java jasmin
+java -classpath `cygpath -wp $JOOSDIR/tinapoc.jar:$JOOSDIR/bcel-5.1.jar` jasmin $*
