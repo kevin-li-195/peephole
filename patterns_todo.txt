@@ -1,0 +1,3 @@
+TODO List of Patterns
+=====
+[x] Remove noops
