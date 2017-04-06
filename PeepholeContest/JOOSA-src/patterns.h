@@ -19,19 +19,29 @@
  *                               iadd
  */
 
+typedef struct BACKTRACK 
+{
+    CODE **code;
+    struct BACKTRACK *prev;
+} BACKTRACK;
+
+BACKTRACK *previousCode = NULL;
+
 int simplify_multiplication_right(CODE **c)
-{ int x,k;
-  if (is_iload(*c,&x) && 
-      is_ldc_int(next(*c),&k) && 
-      is_imul(next(next(*c)))) {
-     if (k==0) return replace(c,3,makeCODEldc_int(0,NULL));
-     else if (k==1) return replace(c,3,makeCODEiload(x,NULL));
-     else if (k==2) return replace(c,3,makeCODEiload(x,
-                                       makeCODEdup(
-                                       makeCODEiadd(NULL))));
-     return 0;
-  }
-  return 0;
+{ 
+    int x,k;
+    if (is_iload(*c,&x) && 
+        is_ldc_int(next(*c),&k) && 
+        is_imul(next(next(*c)))) 
+    {
+        if (k==0) return replace(c,3,makeCODEldc_int(0,NULL));
+        else if (k==1) return replace(c,3,makeCODEiload(x,NULL));
+        else if (k==2) return replace(c,3,makeCODEiload(x,
+                                         makeCODEdup(
+                                         makeCODEiadd(NULL))));
+        return 0;
+    }
+    return 0;
 }
 
 /* dup
@@ -41,13 +51,25 @@ int simplify_multiplication_right(CODE **c)
  * astore x
  */
 int simplify_astore(CODE **c)
-{ int x;
-  if (is_dup(*c) &&
-      is_astore(next(*c),&x) &&
-      is_pop(next(next(*c)))) {
-     return replace(c,3,makeCODEastore(x,NULL));
-  }
+{ 
+    int x;
+    if (is_dup(*c) &&
+        is_astore(next(*c),&x) &&
+        is_pop(next(next(*c)))) 
+    {
+        return replace(c,3,makeCODEastore(x,NULL));
+    }
   return 0;
+}
+
+int remove_dup_pop(CODE **c)
+{
+    if (is_dup(*c) &&
+            is_pop(next(*c)))
+    {
+        return replace(c, 2, NULL);
+    }
+    return 0;
 }
 
 /* iload x
@@ -58,15 +80,17 @@ int simplify_astore(CODE **c)
  * iinc x k
  */ 
 int positive_increment(CODE **c)
-{ int x,y,k;
-  if (is_iload(*c,&x) &&
-      is_ldc_int(next(*c),&k) &&
-      is_iadd(next(next(*c))) &&
-      is_istore(next(next(next(*c))),&y) &&
-      x==y && 0<=k && k<=127) {
-     return replace(c,4,makeCODEiinc(x,k,NULL));
-  }
-  return 0;
+{ 
+    int x,y,k;
+    if (is_iload(*c,&x) &&
+        is_ldc_int(next(*c),&k) &&
+        is_iadd(next(next(*c))) &&
+        is_istore(next(next(next(*c))),&y) &&
+        x==y && 0<=k && k<=127) 
+    {
+        return replace(c,4,makeCODEiinc(x,k,NULL));
+    }
+    return 0;
 }
 
 /* goto L1
@@ -84,17 +108,64 @@ int positive_increment(CODE **c)
  * L2:    (reference count increased by 1)  
  */
 int simplify_goto_goto(CODE **c)
-{ int l1,l2;
-  if (is_goto(*c,&l1) && is_goto(next(destination(l1)),&l2) && l1>l2) {
-     droplabel(l1);
-     copylabel(l2);
-     return replace(c,1,makeCODEgoto(l2,NULL));
-  }
-  return 0;
+{ 
+    int l1,l2;
+    if (is_goto(*c,&l1) && is_goto(next(destination(l1)),&l2) && l1>l2) 
+    {
+        droplabel(l1);
+        copylabel(l2);
+        return replace(c,1,makeCODEgoto(l2,NULL));
+    }
+    return 0;
 }
-void init_patterns(void) {
+
+int prevAddr = 0;
+
+int make_backtrack(CODE **c)
+{
+    prevAddr = (int) c;
+    BACKTRACK *b = malloc(sizeof(BACKTRACK));
+    b->prev = previousCode;
+    b->code = c;
+    previousCode = b;
+
+    return 0;
+}
+
+void printBacktrack()
+{
+    BACKTRACK *b = previousCode;
+    while (b != NULL)
+    {
+        fprintf(stderr, "Previous addr: %d\n",
+                (int) b->code);
+        b = b->prev;
+    }
+    fprintf(stderr, "Done\n");
+}
+
+int remove_nop(CODE **c)
+{
+    if (is_nop(*c))
+    {
+        kill_line(c);
+        return 1;
+    }
+    return 0;
+}
+
+void init_patterns(void) 
+{
 	ADD_PATTERN(simplify_multiplication_right);
 	ADD_PATTERN(simplify_astore);
 	ADD_PATTERN(positive_increment);
 	ADD_PATTERN(simplify_goto_goto);
+	ADD_PATTERN(remove_dup_pop);
+	ADD_PATTERN(remove_nop);
+
+    /*
+     *  Make sure the following pattern is
+     *  always last.
+     */
+    ADD_PATTERN(make_backtrack);
 }
