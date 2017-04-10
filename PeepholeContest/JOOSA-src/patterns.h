@@ -144,6 +144,7 @@ void printBacktrack()
     fprintf(stderr, "Done\n");
 }
 
+
 int remove_nop(CODE **c)
 {
     if (is_nop(*c))
@@ -153,6 +154,33 @@ int remove_nop(CODE **c)
     }
     return 0;
 }
+
+
+/*
+	iconst_0
+	ifeq l
+	----------------
+	goto l
+
+	iconst_0
+	ifge l
+	-------------
+	goto l
+
+	iconst_0
+	ifgt l
+	-------
+	(nothing)
+
+	iconst_0
+	ifne l
+	-------------
+	(Nothing)
+
+
+*/
+
+
 
 void init_patterns(void) 
 {
