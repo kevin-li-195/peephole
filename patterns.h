@@ -756,6 +756,66 @@ int remove_div_by_mone(CODE ** c) {
    return 0; 
 }
 
+/*
+    This transofrmation is required to ensure our patterns hold
+    iloadk / aload k / iconst_k / aconst_null
+    iloadk / aload k/iconst_k/a_const_null
+    --------------------------------------------------
+    iloadk / aload k/iconst_k/a_const_null
+    dup
+*/
+int allow_pattern_application(CODE ** c) {
+    int l1, l2; 
+    if(
+        is_iload(*c,&l1) &&
+        is_iload(next(*c),&l1)
+        )
+        {
+            if(l1 == l2) {
+                return replace(c,2,makeCODEiload(l1,makeCODEdup(NULL))); 
+            } else {
+                return 0; 
+            }
+        } 
+
+    if(
+        is_aload(*c,&l1) &&
+        is_aload(next(*c), &l2)
+        ) {
+            if(l1==l2) {
+                return replace(c,2, makeCODEaload(l1,makeCODEdup(NULL))); 
+            } else {
+                return 0; 
+            }
+        }
+
+    if(
+        is_ldc_int(*c, &l1) &&
+        is_ldc_int(next(*c),&l2) 
+        ) {
+            if(l1 == l2) {
+                return replace(c,2,makeCODEldc_int(l1,makeCODEdup(NULL))); 
+            } else { 
+                return 0;
+            }
+        }
+
+    if(
+        is_aconst_null(*c) &&
+        is_aconst_null(next(*c)) 
+        ) {
+            if(l1 == l2) {
+                return replace(c,2,makeCODEaconst_null(makeCODEdup(NULL))); 
+            } else { 
+                return 0;
+            }
+        }
+
+        /*
+            No transformation matches
+        */
+        return 0; 
+}
 
 /*
  *  Dup unrolling for swap operations
@@ -1137,6 +1197,7 @@ int dup_unroll_swap(CODE **c)
 
 void init_patterns(void)
 {
+    ADD_PATTERN(allow_pattern_application); 
     ADD_PATTERN(simplify_multiplication_right);
     ADD_PATTERN(simplify_astore);
     ADD_PATTERN(positive_increment);
