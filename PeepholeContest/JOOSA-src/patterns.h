@@ -278,6 +278,240 @@ int remove_useless_dup_consume_pop(CODE **c)
 }
 
 /*
+ *  Change branching rules for sequential
+ *  labels.
+ *
+ *  uses_label L1
+ *  ...
+ *  L1:
+ *  L2:
+ *  -----
+ *  uses_label L2
+ *  ...
+ *  L1: // reduce ref count
+ *  L2: // inc ref count
+ */
+int change_branch_seq_labels(CODE **c)
+{
+    int l1, l2;
+    if (uses_label(*c, &l1) && is_label(next(destination(l1)), &l2))
+    {
+        if (is_goto(*c,&l1))
+        {
+            droplabel(l1);
+            copylabel(l2);
+            return replace(c, 1, makeCODEgoto(l2, NULL));
+        }
+        if (is_ifeq(*c,&l1))
+        {
+            droplabel(l1);
+            copylabel(l2);
+            return replace(c, 1, makeCODEifeq(l2, NULL));
+        }
+        if (is_ifne(*c,&l1))
+        {
+            droplabel(l1);
+            copylabel(l2);
+            return replace(c, 1, makeCODEifne(l2, NULL));
+        }
+        if (is_if_acmpeq(*c,&l1))
+        {
+            droplabel(l1);
+            copylabel(l2);
+            return replace(c, 1, makeCODEif_acmpeq(l2, NULL));
+        }
+        if (is_if_acmpne(*c,&l1))
+        {
+            droplabel(l1);
+            copylabel(l2);
+            return replace(c, 1, makeCODEif_acmpne(l2, NULL));
+        }
+        if (is_ifnull(*c,&l1))
+        {
+            droplabel(l1);
+            copylabel(l2);
+            return replace(c, 1, makeCODEifnull(l2, NULL));
+        }
+        if (is_ifnonnull(*c,&l1))
+        {
+            droplabel(l1);
+            copylabel(l2);
+            return replace(c, 1, makeCODEifnonnull(l2, NULL));
+        }
+        if (is_if_icmpeq(*c,&l1))
+        {
+            droplabel(l1);
+            copylabel(l2);
+            return replace(c, 1, makeCODEif_icmpeq(l2, NULL));
+        }
+        if (is_if_icmpgt(*c,&l1))
+        {
+            droplabel(l1);
+            copylabel(l2);
+            return replace(c, 1, makeCODEif_icmpgt(l2, NULL));
+        }
+        if (is_if_icmplt(*c,&l1))
+        {
+            droplabel(l1);
+            copylabel(l2);
+            return replace(c, 1, makeCODEif_icmplt(l2, NULL));
+        }
+        if (is_if_icmple(*c,&l1))
+        {
+            droplabel(l1);
+            copylabel(l2);
+            return replace(c, 1, makeCODEif_icmple(l2, NULL));
+        }
+        if (is_if_icmpge(*c,&l1))
+        {
+            droplabel(l1);
+            copylabel(l2);
+            return replace(c, 1, makeCODEif_icmpge(l2, NULL));
+        }
+        if (is_if_icmpne(*c,&l1))
+        {
+            droplabel(l1);
+            copylabel(l2);
+            return replace(c, 1, makeCODEif_icmpne(l2, NULL));
+        }
+    }
+
+    return 0;
+}
+
+/*
+ *  aconst_null simplification
+ *
+ *  aconst_null
+ *  if_acmpeq L / if_icmpeq L
+ *  -----
+ *  ifnull L
+ *
+ *
+ *  aconst_null
+ *  if_acmpne L / if_icmpne L
+ *  -----
+ *  ifnonnull L
+ */
+int aconst_null_cmp_simplify(CODE **c)
+{
+    int l;
+    if (is_aconst_null(*c))
+    {
+        if (is_if_acmpeq(next(*c), &l) ||
+                is_if_icmpeq(next(*c), &l))
+        {
+            return replace(c, 2, makeCODEifnull(l, NULL));
+        }
+        if (is_if_acmpne(next(*c), &l) ||
+                is_if_icmpne(next(*c), &l))
+        {
+            return replace(c, 2, makeCODEifnonnull(l, NULL));
+        }
+    }
+    return 0;
+}
+
+int aconst_null_reduce(CODE **c)
+{
+    int l;
+    if (is_aconst_null(*c) &&
+            is_dup(next(*c)) &&
+            (is_if_icmpeq(next(next(*c)), &l) ||
+             is_if_acmpeq(next(next(*c)), &l)
+             )
+       )
+    {
+        return replace(c, 3, makeCODEgoto(l, NULL));
+    }
+    if (is_aconst_null(*c) &&
+            is_dup(next(*c)) &&
+            (is_if_icmpne(next(next(*c)), &l) ||
+             is_if_acmpne(next(next(*c)), &l)
+             )
+       )
+    {
+        droplabel(l);
+        return replace(c, 3, NULL);
+    }
+    return 0;
+}
+
+/*  Check constant value
+ *  if we use an 'if' after it.
+ *
+ *  iconst_k
+ *  ifeq / iflt / ifgt / ifge / ifle / ifne L
+ *  -----
+ *  goto L / (nothing) // depending on k
+ */
+int const_if_eval(CODE **c)
+{
+    int k, l;
+    if (is_ldc_int(*c, &k) &&
+            is_ifeq(next(*c), &l)
+       )
+    {
+        if (k == 0)
+        {
+            return replace(c, 2, makeCODEgoto(l, NULL));
+        }
+        else
+        {
+            droplabel(l);
+            return replace(c, 2, NULL);
+        }
+    }
+    if (is_ldc_int(*c, &k) &&
+            is_ifne(next(*c), &l)
+       )
+    {
+        if (k == 0)
+        {
+            droplabel(l);
+            return replace(c, 2, NULL);
+        }
+        else
+        {
+            return replace(c, 2, makeCODEgoto(l, NULL));
+        }
+    }
+    return 0;
+}
+
+/*
+ *  Comparing int to zero is equivalent to
+ *  just using comparison to zero.
+ *
+ *  iconst_0
+ *  if_cmpeq L
+ *  -----
+ *  ifeq L
+ *
+ *  iconst_0
+ *  if_cmpne L
+ *  -----
+ *  ifne L
+ */
+int zero_comparison_simplify(CODE **c)
+{
+    int k;
+    int l;
+    if (is_ldc_int(*c, &k) && k == 0)
+    {
+        if (is_if_icmpeq(next(*c), &l))
+        {
+            return replace(c, 2, makeCODEifeq(l, NULL));
+        }
+        if (is_if_icmpne(next(*c), &l))
+        {
+            return replace(c, 2, makeCODEifne(l, NULL));
+        }
+    }
+    return 0;
+}
+
+/*
     iconst_0
     ifeq l
     ----------------
@@ -311,6 +545,11 @@ void init_patterns(void)
     ADD_PATTERN(remove_null_check_after_ldc);
     ADD_PATTERN(drop_dead_labels);
     ADD_PATTERN(remove_useless_dup_consume_pop);
+    ADD_PATTERN(change_branch_seq_labels);
+    ADD_PATTERN(aconst_null_cmp_simplify);
+    ADD_PATTERN(aconst_null_reduce);
+    ADD_PATTERN(const_if_eval);
+    ADD_PATTERN(zero_comparison_simplify);
 
     /*
      *  Make sure the following pattern is
