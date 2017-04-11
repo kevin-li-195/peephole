@@ -976,6 +976,120 @@ int remove_unnecessary_swap(CODE **c) {
 }
 
 /*
+* invert conparisons for specific sequences:
+*
+*/
+
+int invert_comp_goto(CODE ** c) {
+    int l1, l2,l3; 
+
+    if(
+        is_ifnull(*c, &l1) &&
+        is_goto(next(*c),&l2) &&
+        is_label(next(next(*c)), &l3)
+        ) {
+            if(l1 == l3) {
+                droplabel(l1); 
+               return replace(c,2,makeCODEifnonnull(l2,NULL));
+            } else {
+                return 0; 
+            }
+        }
+    if(
+        is_ifnonnull(*c, &l1) &&
+        is_goto(next(*c),&l2) &&
+        is_label(next(next(*c)), &l3)
+        ) {
+            if(l1 == l3) {
+                droplabel(l1); 
+               return replace(c,2,makeCODEifnull(l2,NULL));
+            } else {
+                return 0; 
+            }
+        }
+
+    if(
+        is_ifeq(*c, &l1) &&
+        is_goto(next(*c),&l2) &&
+        is_label(next(next(*c)), &l3)
+        ) {
+            if(l1 == l3) {
+                droplabel(l1); 
+               return replace(c,2,makeCODEifne(l2,NULL));
+            } else {
+                return 0; 
+            }
+        }
+    if(
+        is_ifne(*c, &l1) &&
+        is_goto(next(*c),&l2) &&
+        is_label(next(next(*c)), &l3)
+        ) {
+            if(l1 == l3) {
+                droplabel(l1); 
+               return replace(c,2,makeCODEifeq(l2,NULL));
+            } else {
+                return 0; 
+            }
+        }
+    if(
+        is_if_icmpeq(*c, &l1) &&
+        is_goto(next(*c),&l2) &&
+        is_label(next(next(*c)), &l3)
+        ) {
+            if(l1 == l3) {
+                droplabel(l1); 
+               return replace(c,2,makeCODEif_icmpne(l2,NULL));
+            } else {
+                return 0; 
+            }
+        }
+        
+    if(
+        is_if_icmpne(*c, &l1) &&
+        is_goto(next(*c),&l2) &&
+        is_label(next(next(*c)), &l3)
+        ) {
+            if(l1 == l3) {
+                droplabel(l1); 
+               return replace(c,2,makeCODEif_icmpeq(l2,NULL));
+            } else {
+                return 0; 
+            }
+        }
+        
+    if(
+        is_if_acmpeq(*c, &l1) &&
+        is_goto(next(*c),&l2) &&
+        is_label(next(next(*c)), &l3)
+        ) {
+            if(l1 == l3) {
+                droplabel(l1); 
+               return replace(c,2,makeCODEif_acmpne(l2,NULL));
+            } else {
+                return 0; 
+            }
+        }
+        
+    if(
+        is_if_acmpne(*c, &l1) &&
+        is_goto(next(*c),&l2) &&
+        is_label(next(next(*c)), &l3)
+        ) {
+            if(l1 == l3) {
+                droplabel(l1); 
+               return replace(c,2,makeCODEif_acmpeq(l2,NULL));
+            } else {
+                return 0; 
+            }
+        }
+        
+        
+
+     return 0; 
+}
+
+/*
     This transofrmation is required to ensure our patterns hold
     iloadk / aload k / iconst_k / aconst_null
     iloadk / aload k/iconst_k/a_const_null
@@ -1443,7 +1557,7 @@ void init_patterns(void)
     ADD_PATTERN(remove_unnecessary_swap);  
     ADD_PATTERN(dup_unroll_swap);
     ADD_PATTERN(compare_after_dup); 
-
+    ADD_PATTERN(invert_comp_goto); 
     /*
      *  Make sure the following pattern is
      *  always last.
