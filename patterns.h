@@ -1528,6 +1528,37 @@ int dup_unroll_swap(CODE **c)
     (Nothing)
 */
 
+int remove_unreachable_code(CODE ** c) {
+    CODE * current = *c;  
+    int l1,l2;
+    int count = 0; 
+    if(
+        is_goto(*c, &l1) 
+        )
+     {
+
+        while(current != NULL && is_label(current,&l2)!=1) {
+            count = count+1; 
+            current = next(current); 
+             
+        }
+
+        if(current == NULL) {
+            /*window is too short to identify*/
+            return 0; 
+        }
+        if(l2 != l1) {
+            /*encountered new label*/
+            return 0; 
+        } else if(l2 == l1) {
+            /*we must remove 'count' many instructions and replace with a single goto */
+           return replace(c,count,makeCODEgoto(l1,NULL)); 
+        }
+     }
+
+     return 0; 
+}
+
 void init_patterns(void)
 {
     ADD_PATTERN(allow_pattern_application); 
@@ -1558,6 +1589,7 @@ void init_patterns(void)
     ADD_PATTERN(dup_unroll_swap);
     ADD_PATTERN(compare_after_dup); 
     ADD_PATTERN(invert_comp_goto); 
+    ADD_PATTERN(remove_unreachable_code); 
     /*
      *  Make sure the following pattern is
      *  always last.
