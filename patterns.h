@@ -1442,6 +1442,7 @@ void init_patterns(void)
     ADD_PATTERN(remove_div_by_mone);
     ADD_PATTERN(remove_unnecessary_swap);  
     ADD_PATTERN(dup_unroll_swap);
+    ADD_PATTERN(compare_after_dup); 
 
     /*
      *  Make sure the following pattern is
