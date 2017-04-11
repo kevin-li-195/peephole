@@ -230,6 +230,23 @@ int remove_null_check_after_ldc(CODE **c)
 }
 
 /*
+ *  Drop dead labels (where ref count is 0)
+ *
+ *  L:
+ *  -----
+ *  (nothing)
+ */
+int drop_dead_labels(CODE **c)
+{
+    int l;
+    if (is_label(*c, &l) && deadlabel(l))
+    {
+        return replace(c, 1, NULL);
+    }
+    return 0;
+}
+
+/*
     iconst_0
     ifeq l
     ----------------
@@ -261,6 +278,7 @@ void init_patterns(void)
     ADD_PATTERN(remove_nop);
     ADD_PATTERN(remove_null_check_string_concat);
     ADD_PATTERN(remove_null_check_after_ldc);
+    ADD_PATTERN(drop_dead_labels);
 
     /*
      *  Make sure the following pattern is
