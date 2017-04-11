@@ -651,13 +651,13 @@ int remove_sub_from_zero(CODE ** c) {
        is_iload(next(*c), &l2) &&
        is_isub(next(next(*c)))) {
         if (l1 == 0) { /* we can replace */
-           return replace(c, 3, makeCODEiload(l2,makeCODEineg(NULL))); 
+           return replace(c, 3, makeCODEiload(l2,makeCODEineg(NULL)));
         } else { /*we must leave it as is*/
-            return 0; 
+            return 0;
         }
 
     }
-    return 0; 
+    return 0;
 }
 
 /*
@@ -669,7 +669,7 @@ int remove_sub_from_zero(CODE ** c) {
 */
 
 int remove_sub_zero(CODE ** c) {
-    int l1,l2; 
+    int l1,l2;
     if (
         is_iload(*c,&l1) &&
         is_ldc_int(next(*c),&l2) &&
@@ -677,14 +677,14 @@ int remove_sub_zero(CODE ** c) {
         )
         {
             if(l2 == 0) {
-                return replace(c,3, makeCODEiload(l1,NULL)); 
+                return replace(c,3, makeCODEiload(l1,NULL));
             } else {
             /*cannot reduce*/
-                return 0; 
+                return 0;
             }
         }
     /*pattern does not match*/
-    return 0; 
+    return 0;
 }
 
 /*
@@ -695,16 +695,16 @@ int remove_sub_zero(CODE ** c) {
 */
 
 int remove_null_checkcast(CODE ** c) {
-    char * arg; 
+    char * arg;
     if(
         is_aconst_null(*c) &&
-        is_checkcast(next(*c),&arg) 
-        ) 
+        is_checkcast(next(*c),&arg)
+        )
     {
-        return replace(c, 2, makeCODEaconst_null(NULL)); 
+        return replace(c, 2, makeCODEaconst_null(NULL));
     }
     /*pattern does not match*/
-    return 0; 
+    return 0;
 }
 
 /*
@@ -712,23 +712,23 @@ int remove_null_checkcast(CODE ** c) {
 *ldc_1
 *idiv
 *----------
-* 
+*
 */
 
 int remove_div_by_one(CODE ** c) {
-   int l1; 
+   int l1;
    if(
         is_ldc_int(*c, &l1) &&
         is_idiv(next(*c))
     ) {
         if(l1 == 1) {
-            return replace_modified(c, 2, NULL); 
+            return replace_modified(c, 2, NULL);
         }
    }
    /*
     Pattern does not match
    */
-   return 0; 
+   return 0;
 }
 
 
@@ -741,19 +741,19 @@ int remove_div_by_one(CODE ** c) {
 */
 
 int remove_div_by_mone(CODE ** c) {
-   int l1; 
+   int l1;
    if(
         is_ldc_int(*c, &l1) &&
         is_idiv(next(*c))
     ) {
         if(l1 == -1) {
-            return replace(c,2,makeCODEineg(NULL)); 
+            return replace(c,2,makeCODEineg(NULL));
         }
    }
    /*
     Pattern does not match
    */
-   return 0; 
+   return 0;
 }
 
 
@@ -767,48 +767,48 @@ int remove_div_by_mone(CODE ** c) {
 */
 
 int remove_redundant_pop(CODE **c) {
-    int l1; 
+    int l1;
     char *s;
     if(
         is_iload(*c, &l1) &&
         is_pop(next(*c))
-        ) 
+        )
     {
-        return replace_modified(c,2,NULL); 
+        return replace_modified(c,2,NULL);
     }
     if(
         is_aload(*c, &l1) &&
         is_pop(next(*c))
-        ) 
+        )
     {
-        return replace_modified(c,2,NULL); 
+        return replace_modified(c,2,NULL);
     }
 
     if(
         is_aconst_null(*c) &&
         is_pop(next(*c))
-        ) 
+        )
     {
-        return replace_modified(c,2,NULL); 
+        return replace_modified(c,2,NULL);
     }
 
     if(
         is_ldc_int(*c, &l1) &&
         is_pop(next(*c))
-        ) 
+        )
     {
-        return replace_modified(c,2,NULL); 
+        return replace_modified(c,2,NULL);
     }
 
     if (
         is_ldc_string(*c, &s) &&
         is_pop(next(*c))
-        ) 
+        )
     {
-        return replace_modified(c,2,NULL); 
+        return replace_modified(c,2,NULL);
     }
 
-    return 0; 
+    return 0;
 }
 
 /*
@@ -824,25 +824,25 @@ int remove_redundant_pop(CODE **c) {
  *  (nothing)
  */
 int compare_after_dup(CODE **c) {
-    int l1; 
-    int label; 
+    int l1;
+    int label;
     if(
         is_iload(*c, &l1) &&
         is_dup(next(*c)) &&
         is_if_icmpne(next(next(*c)), &label)
         )
-    {   
-        droplabel(label); 
-        return replace_modified(c,3,NULL); 
+    {
+        droplabel(label);
+        return replace_modified(c,3,NULL);
     }
      if(
         is_iload(*c, &l1) &&
         is_dup(next(*c)) &&
         is_if_icmpgt(next(next(*c)), &label)
         )
-    {   
-        droplabel(label); 
-        return replace_modified(c,3,NULL); 
+    {
+        droplabel(label);
+        return replace_modified(c,3,NULL);
     }
 
      if(
@@ -850,9 +850,9 @@ int compare_after_dup(CODE **c) {
         is_dup(next(*c)) &&
         is_if_icmplt(next(next(*c)), &label)
         )
-    {   
-        droplabel(label); 
-        return replace_modified(c,3,NULL); 
+    {
+        droplabel(label);
+        return replace_modified(c,3,NULL);
     }
 
      if(
@@ -860,11 +860,11 @@ int compare_after_dup(CODE **c) {
         is_dup(next(*c)) &&
         is_if_acmpne(next(next(*c)), &label)
         )
-    {   
-        droplabel(label); 
-        return replace_modified(c,3,NULL); 
+    {
+        droplabel(label);
+        return replace_modified(c,3,NULL);
     }
-    return 0; 
+    return 0;
 }
 
 int remove_unnecessary_swap(CODE **c) {
@@ -880,43 +880,43 @@ int remove_unnecessary_swap(CODE **c) {
         is_swap(next(next(*c)))
         )
     {
-        return replace(c,3,makeCODEiload(l2,makeCODEiload(l1,NULL))); 
+        return replace(c,3,makeCODEiload(l2,makeCODEiload(l1,NULL)));
     }
 
     if (
         is_iload(*c,&l1) &&
         is_aload(next(*c), &l2) &&
         is_swap(next(next(*c)))
-    ) 
+    )
     {
-        return replace(c,3,makeCODEaload(l2,makeCODEiload(l1,NULL))); 
+        return replace(c,3,makeCODEaload(l2,makeCODEiload(l1,NULL)));
     }
 
     if (
         is_iload(*c,&l1) &&
         is_ldc_int(next(*c), &l2) &&
         is_swap(next(next(*c)))
-    ) 
+    )
     {
-        return replace(c,3,makeCODEldc_int(l2,makeCODEiload(l1, NULL))); 
+        return replace(c,3,makeCODEldc_int(l2,makeCODEiload(l1, NULL)));
     }
 
     if (
         is_iload(*c,&l1) &&
         is_ldc_string(next(*c), &s) &&
         is_swap(next(next(*c)))
-    ) 
+    )
     {
-        return replace(c,3,makeCODEldc_string(s,makeCODEiload(l1, NULL))); 
+        return replace(c,3,makeCODEldc_string(s,makeCODEiload(l1, NULL)));
     }
 
     if (
         is_iload(*c,&l1) &&
         is_aconst_null(next(*c)) &&
         is_swap(next(next(*c)))
-    ) 
+    )
     {
-        return replace(c,3,makeCODEaconst_null(makeCODEiload(l1, NULL))); 
+        return replace(c,3,makeCODEaconst_null(makeCODEiload(l1, NULL)));
     }
     /*
      *  1st instruction is aload
@@ -925,17 +925,17 @@ int remove_unnecessary_swap(CODE **c) {
         is_aload(*c,&l1) &&
         is_iload(next(*c), &l2) &&
         is_swap(next(next(*c)))
-    ) 
+    )
     {
-        return replace(c,3,makeCODEiload(l2,makeCODEaload(l1, NULL))); 
+        return replace(c,3,makeCODEiload(l2,makeCODEaload(l1, NULL)));
     }
     if (
         is_aload(*c,&l1) &&
         is_aconst_null(next(*c)) &&
         is_swap(next(next(*c)))
-    ) 
+    )
     {
-        return replace(c,3,makeCODEaconst_null(makeCODEaload(l1, NULL))); 
+        return replace(c,3,makeCODEaconst_null(makeCODEaload(l1, NULL)));
     }
 
     if (
@@ -944,7 +944,7 @@ int remove_unnecessary_swap(CODE **c) {
         is_swap(next(next(*c)))
     )
     {
-        return replace(c,3,makeCODEaload(l2,makeCODEaload(l1, NULL))); 
+        return replace(c,3,makeCODEaload(l2,makeCODEaload(l1, NULL)));
     }
     if (
         is_aload(*c,&l1) &&
@@ -952,16 +952,16 @@ int remove_unnecessary_swap(CODE **c) {
         is_swap(next(next(*c)))
     )
     {
-        return replace(c,3,makeCODEldc_string(s,makeCODEaload(l1, NULL))); 
+        return replace(c,3,makeCODEldc_string(s,makeCODEaload(l1, NULL)));
     }
 
     if (
         is_aload(*c,&l1) &&
         is_ldc_int(next(*c), &l2) &&
         is_swap(next(next(*c)))
-    ) 
+    )
     {
-        return replace(c,3,makeCODEldc_int(l2,makeCODEaload(l1, NULL))); 
+        return replace(c,3,makeCODEldc_int(l2,makeCODEaload(l1, NULL)));
     }
 
     /*
@@ -973,7 +973,7 @@ int remove_unnecessary_swap(CODE **c) {
         is_swap(next(next(*c)))
     )
     {
-        return replace(c,3,makeCODEldc_int(l2,makeCODEldc_int(l1, NULL))); 
+        return replace(c,3,makeCODEldc_int(l2,makeCODEldc_int(l1, NULL)));
     }
 
     if (
@@ -982,7 +982,7 @@ int remove_unnecessary_swap(CODE **c) {
         is_swap(next(next(*c)))
     )
     {
-        return replace(c,3,makeCODEiload(l2,makeCODEldc_int(l1, NULL))); 
+        return replace(c,3,makeCODEiload(l2,makeCODEldc_int(l1, NULL)));
     }
 
     if (
@@ -990,24 +990,24 @@ int remove_unnecessary_swap(CODE **c) {
         is_aload(next(*c), &l2) &&
         is_swap(next(next(*c)))
     ) {
-        return replace(c,3,makeCODEaload(l2,makeCODEldc_int(l1, NULL))); 
+        return replace(c,3,makeCODEaload(l2,makeCODEldc_int(l1, NULL)));
     }
 
     if (
         is_ldc_int(*c,&l1) &&
         is_aconst_null(next(*c)) &&
         is_swap(next(next(*c)))
-    ) 
+    )
     {
-        return replace(c,3,makeCODEaconst_null(makeCODEldc_int(l1, NULL))); 
+        return replace(c,3,makeCODEaconst_null(makeCODEldc_int(l1, NULL)));
     }
     if (
         is_ldc_int(*c,&l1) &&
         is_ldc_string(next(*c), &s) &&
         is_swap(next(next(*c)))
-    ) 
+    )
     {
-        return replace(c,3,makeCODEldc_string(s, makeCODEldc_int(l1, NULL))); 
+        return replace(c,3,makeCODEldc_string(s, makeCODEldc_int(l1, NULL)));
     }
 
     /*
@@ -1018,9 +1018,9 @@ int remove_unnecessary_swap(CODE **c) {
         is_aconst_null(*c) &&
         is_ldc_int(next(*c), &l2) &&
         is_swap(next(next(*c)))
-    ) 
+    )
     {
-        return replace(c,3,makeCODEldc_int(l2,makeCODEaconst_null(NULL))); 
+        return replace(c,3,makeCODEldc_int(l2,makeCODEaconst_null(NULL)));
     }
 
 
@@ -1028,38 +1028,38 @@ int remove_unnecessary_swap(CODE **c) {
         is_aconst_null(*c) &&
         is_iload(next(*c), &l2) &&
         is_swap(next(next(*c)))
-    ) 
+    )
     {
-        return replace(c,3,makeCODEiload(l2,makeCODEaconst_null(NULL))); 
+        return replace(c,3,makeCODEiload(l2,makeCODEaconst_null(NULL)));
     }
 
     if (
         is_aconst_null(*c) &&
         is_aload(next(*c), &l2) &&
         is_swap(next(next(*c)))
-    ) 
+    )
     {
-        return replace(c,3,makeCODEaload(l2,makeCODEaconst_null(NULL))); 
+        return replace(c,3,makeCODEaload(l2,makeCODEaconst_null(NULL)));
     }
 
     if (
         is_aconst_null(*c) &&
         is_aconst_null(next(*c)) &&
         is_swap(next(next(*c)))
-    ) 
+    )
     {
-        return replace(c,3,makeCODEaconst_null(makeCODEaconst_null(NULL))); 
+        return replace(c,3,makeCODEaconst_null(makeCODEaconst_null(NULL)));
     }
 
     if (
         is_aconst_null(*c) &&
         is_ldc_string(next(*c), &s) &&
         is_swap(next(next(*c)))
-    ) 
+    )
     {
-        return replace(c,3,makeCODEldc_string(s, makeCODEaconst_null(NULL))); 
+        return replace(c,3,makeCODEldc_string(s, makeCODEaconst_null(NULL)));
     }
-    
+
     /*
      *  1st instruction is ldc_string
      */
@@ -1068,48 +1068,48 @@ int remove_unnecessary_swap(CODE **c) {
         is_ldc_string(*c, &f) &&
         is_iload(next(*c), &l1) &&
         is_swap(next(next(*c)))
-    ) 
+    )
     {
-        return replace(c,3,makeCODEiload(l1, makeCODEldc_string(f, NULL))); 
+        return replace(c,3,makeCODEiload(l1, makeCODEldc_string(f, NULL)));
     }
 
     if (
         is_ldc_string(*c, &f) &&
         is_aload(next(*c), &l1) &&
         is_swap(next(next(*c)))
-    ) 
+    )
     {
-        return replace(c,3,makeCODEaload(l1, makeCODEldc_string(f, NULL))); 
+        return replace(c,3,makeCODEaload(l1, makeCODEldc_string(f, NULL)));
     }
 
     if (
         is_ldc_string(*c, &f) &&
         is_ldc_int(next(*c), &l1) &&
         is_swap(next(next(*c)))
-    ) 
+    )
     {
-        return replace(c,3,makeCODEldc_int(l1, makeCODEldc_string(f, NULL))); 
+        return replace(c,3,makeCODEldc_int(l1, makeCODEldc_string(f, NULL)));
     }
 
     if (
         is_ldc_string(*c, &f) &&
         is_ldc_string(next(*c), &s) &&
         is_swap(next(next(*c)))
-    ) 
+    )
     {
-        return replace(c,3,makeCODEldc_string(s, makeCODEldc_string(f, NULL))); 
+        return replace(c,3,makeCODEldc_string(s, makeCODEldc_string(f, NULL)));
     }
 
     if (
         is_ldc_string(*c, &f) &&
         is_aconst_null(next(*c)) &&
         is_swap(next(next(*c)))
-    ) 
+    )
     {
-        return replace(c,3,makeCODEaconst_null(makeCODEldc_string(f, NULL))); 
+        return replace(c,3,makeCODEaconst_null(makeCODEldc_string(f, NULL)));
     }
 
-    return 0; 
+    return 0;
 }
 
 /*
@@ -1129,7 +1129,7 @@ int remove_unnecessary_swap(CODE **c) {
  *  conditions that can be negated.
  */
 int invert_comp_goto(CODE ** c) {
-    int l1, l2,l3; 
+    int l1, l2,l3;
 
     if(
         is_ifnull(*c, &l1) &&
@@ -1137,10 +1137,10 @@ int invert_comp_goto(CODE ** c) {
         is_label(next(next(*c)), &l3)
         ) {
             if(l1 == l3) {
-                droplabel(l1); 
+                droplabel(l1);
                return replace(c,2,makeCODEifnonnull(l2,NULL));
             } else {
-                return 0; 
+                return 0;
             }
         }
     if(
@@ -1149,10 +1149,10 @@ int invert_comp_goto(CODE ** c) {
         is_label(next(next(*c)), &l3)
         ) {
             if(l1 == l3) {
-                droplabel(l1); 
+                droplabel(l1);
                return replace(c,2,makeCODEifnull(l2,NULL));
             } else {
-                return 0; 
+                return 0;
             }
         }
 
@@ -1162,10 +1162,10 @@ int invert_comp_goto(CODE ** c) {
         is_label(next(next(*c)), &l3)
         ) {
             if(l1 == l3) {
-                droplabel(l1); 
+                droplabel(l1);
                return replace(c,2,makeCODEifne(l2,NULL));
             } else {
-                return 0; 
+                return 0;
             }
         }
     if(
@@ -1174,10 +1174,10 @@ int invert_comp_goto(CODE ** c) {
         is_label(next(next(*c)), &l3)
         ) {
             if(l1 == l3) {
-                droplabel(l1); 
+                droplabel(l1);
                return replace(c,2,makeCODEifeq(l2,NULL));
             } else {
-                return 0; 
+                return 0;
             }
         }
     if(
@@ -1186,49 +1186,49 @@ int invert_comp_goto(CODE ** c) {
         is_label(next(next(*c)), &l3)
         ) {
             if(l1 == l3) {
-                droplabel(l1); 
+                droplabel(l1);
                return replace(c,2,makeCODEif_icmpne(l2,NULL));
             } else {
-                return 0; 
+                return 0;
             }
         }
-        
+
     if(
         is_if_icmpne(*c, &l1) &&
         is_goto(next(*c),&l2) &&
         is_label(next(next(*c)), &l3)
         ) {
             if(l1 == l3) {
-                droplabel(l1); 
+                droplabel(l1);
                return replace(c,2,makeCODEif_icmpeq(l2,NULL));
             } else {
-                return 0; 
+                return 0;
             }
         }
-        
+
     if(
         is_if_icmplt(*c, &l1) &&
         is_goto(next(*c),&l2) &&
         is_label(next(next(*c)), &l3)
         ) {
             if(l1 == l3) {
-                droplabel(l1); 
+                droplabel(l1);
                return replace(c,2,makeCODEif_icmpge(l2,NULL));
             } else {
-                return 0; 
+                return 0;
             }
         }
-        
+
     if(
         is_if_icmple(*c, &l1) &&
         is_goto(next(*c),&l2) &&
         is_label(next(next(*c)), &l3)
         ) {
             if(l1 == l3) {
-                droplabel(l1); 
+                droplabel(l1);
                return replace(c,2,makeCODEif_icmpgt(l2,NULL));
             } else {
-                return 0; 
+                return 0;
             }
         }
     if(
@@ -1237,10 +1237,10 @@ int invert_comp_goto(CODE ** c) {
         is_label(next(next(*c)), &l3)
         ) {
             if(l1 == l3) {
-                droplabel(l1); 
+                droplabel(l1);
                return replace(c,2,makeCODEif_icmple(l2,NULL));
             } else {
-                return 0; 
+                return 0;
             }
         }
     if(
@@ -1249,10 +1249,10 @@ int invert_comp_goto(CODE ** c) {
         is_label(next(next(*c)), &l3)
         ) {
             if(l1 == l3) {
-                droplabel(l1); 
+                droplabel(l1);
                return replace(c,2,makeCODEif_icmplt(l2,NULL));
             } else {
-                return 0; 
+                return 0;
             }
         }
     if(
@@ -1261,29 +1261,29 @@ int invert_comp_goto(CODE ** c) {
         is_label(next(next(*c)), &l3)
         ) {
             if(l1 == l3) {
-                droplabel(l1); 
+                droplabel(l1);
                return replace(c,2,makeCODEif_acmpne(l2,NULL));
             } else {
-                return 0; 
+                return 0;
             }
         }
-        
+
     if(
         is_if_acmpne(*c, &l1) &&
         is_goto(next(*c),&l2) &&
         is_label(next(next(*c)), &l3)
         ) {
             if(l1 == l3) {
-                droplabel(l1); 
+                droplabel(l1);
                return replace(c,2,makeCODEif_acmpeq(l2,NULL));
             } else {
-                return 0; 
+                return 0;
             }
         }
-        
-        
 
-     return 0; 
+
+
+     return 0;
 }
 
 /*
@@ -1295,53 +1295,53 @@ int invert_comp_goto(CODE ** c) {
     dup
 */
 int allow_pattern_application(CODE ** c) {
-    int l1, l2; 
+    int l1, l2;
     if(
         is_iload(*c,&l1) &&
         is_iload(next(*c),&l2)
         )
         {
             if(l1 == l2) {
-                return replace(c,2,makeCODEiload(l1,makeCODEdup(NULL))); 
+                return replace(c,2,makeCODEiload(l1,makeCODEdup(NULL)));
             } else {
-                return 0; 
+                return 0;
             }
-        } 
+        }
 
     if(
         is_aload(*c,&l1) &&
         is_aload(next(*c), &l2)
         ) {
             if(l1==l2) {
-                return replace(c,2, makeCODEaload(l1,makeCODEdup(NULL))); 
+                return replace(c,2, makeCODEaload(l1,makeCODEdup(NULL)));
             } else {
-                return 0; 
+                return 0;
             }
         }
 
     if(
         is_ldc_int(*c, &l1) &&
-        is_ldc_int(next(*c),&l2) 
+        is_ldc_int(next(*c),&l2)
         ) {
             if (l1 == l2) {
-                return replace(c,2,makeCODEldc_int(l1,makeCODEdup(NULL))); 
-            } else { 
+                return replace(c,2,makeCODEldc_int(l1,makeCODEdup(NULL)));
+            } else {
                 return 0;
             }
         }
 
     if(
         is_aconst_null(*c) &&
-        is_aconst_null(next(*c)) 
-    ) 
+        is_aconst_null(next(*c))
+    )
     {
-        return replace(c,2,makeCODEaconst_null(makeCODEdup(NULL))); 
+        return replace(c,2,makeCODEaconst_null(makeCODEdup(NULL)));
     }
 
     /*
         No transformation matches
     */
-    return 0; 
+    return 0;
 }
 
 /*
@@ -1742,10 +1742,121 @@ int remove_unreachable_code(CODE ** c) {
 
      return 0; 
 }
+/*
+ *  Many times, there is unnecessary
+ *  boilerplate surrounding putfield
+ *  commands.
+ *
+ *  iload_j / aload_j / ldc j / aconst_null / dup
+ *  aload_k
+ *  iload_l / aload_l / ldc l / aconst_null
+ *  putfield
+ *  pop
+ *  -----
+ *  aload_k
+ *  iload_l / aload_l / ldc l / aconst_null
+ *  putfield
+ */
+int simplify_putfield_load_pop(CODE **c)
+{
+    int k, l;
+    int dummy;
+    char *dummy_s, *putfield_arg, *s;
+    if (is_dup(*c) ||
+            is_aload(*c, &dummy) ||
+            is_iload(*c, &dummy) ||
+            is_ldc_int(*c, &dummy) ||
+            is_ldc_string(*c, &dummy_s) ||
+            is_aconst_null(*c)
+       )
+    {
+        if (is_aload(next(*c), &k) &&
+                is_putfield(nextby(*c, 3), &putfield_arg) &&
+                is_pop(nextby(*c, 4))
+           )
+        {
+            if (is_iload(nextby(*c, 2), &l))
+            {
+                return replace(c, 5,
+                        makeCODEaload(
+                            k,
+                            makeCODEiload(
+                                l,
+                                makeCODEputfield(
+                                    putfield_arg,
+                                    NULL
+                                    )
+                                )
+                            )
+                        );
+            }
+            if (is_aload(nextby(*c, 2), &l))
+            {
+                return replace(c, 5,
+                        makeCODEaload(
+                            k,
+                            makeCODEaload(
+                                l,
+                                makeCODEputfield(
+                                    putfield_arg,
+                                    NULL
+                                    )
+                                )
+                            )
+                        );
+            }
+            if (is_ldc_int(nextby(*c, 2), &l))
+            {
+                return replace(c, 5,
+                        makeCODEaload(
+                            k,
+                            makeCODEldc_int(
+                                l,
+                                makeCODEputfield(
+                                    putfield_arg,
+                                    NULL
+                                    )
+                                )
+                            )
+                        );
+            }
+            if (is_ldc_string(nextby(*c, 2), &s))
+            {
+                return replace(c, 5,
+                        makeCODEaload(
+                            k,
+                            makeCODEldc_string(
+                                s,
+                                makeCODEputfield(
+                                    putfield_arg,
+                                    NULL
+                                    )
+                                )
+                            )
+                        );
+            }
+            if (is_aconst_null(nextby(*c, 2)))
+            {
+                return replace(c, 5,
+                        makeCODEaload(
+                            k,
+                            makeCODEaconst_null(
+                                makeCODEputfield(
+                                    putfield_arg,
+                                    NULL
+                                    )
+                                )
+                            )
+                        );
+            }
+        }
+    }
+    return 0;
+}
 
 void init_patterns(void)
 {
-    ADD_PATTERN(allow_pattern_application); 
+    ADD_PATTERN(allow_pattern_application);
     ADD_PATTERN(simplify_multiplication_right);
     ADD_PATTERN(simplify_astore);
     ADD_PATTERN(positive_increment);
@@ -1764,16 +1875,17 @@ void init_patterns(void)
     ADD_PATTERN(useless_load_store);
     ADD_PATTERN(comp_load_dup_reduce);
     ADD_PATTERN(remove_crazy_goto);
-    ADD_PATTERN(remove_sub_from_zero); 
-    ADD_PATTERN(remove_sub_zero); 
-    ADD_PATTERN(remove_null_checkcast); 
-    ADD_PATTERN(remove_div_by_one); 
+    ADD_PATTERN(remove_sub_from_zero);
+    ADD_PATTERN(remove_sub_zero);
+    ADD_PATTERN(remove_null_checkcast);
+    ADD_PATTERN(remove_div_by_one);
     ADD_PATTERN(remove_div_by_mone);
-    ADD_PATTERN(remove_unnecessary_swap);  
+    ADD_PATTERN(remove_unnecessary_swap);
     ADD_PATTERN(dup_unroll_swap);
     ADD_PATTERN(compare_after_dup); 
     ADD_PATTERN(invert_comp_goto); 
     ADD_PATTERN(remove_unreachable_code); 
+    ADD_PATTERN(simplify_putfield_load_pop);
     /*
      *  Make sure the following pattern is
      *  always last.
