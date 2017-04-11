@@ -512,6 +512,117 @@ int zero_comparison_simplify(CODE **c)
 }
 
 /*
+ *  Useless load/store noop.
+ *
+ *  aload_k / iload_k
+ *  astore_k / istore_k
+ *  -----
+ *  nothing (for the same k only)
+ */
+int useless_load_store(CODE **c)
+{
+    int j, k;
+    if (is_aload(*c, &j) &&
+            is_astore(next(*c), &k))
+    {
+        if (j == k)
+        {
+            return replace(c, 2, NULL);
+        }
+    }
+    if (is_iload(*c, &j) &&
+            is_istore(next(*c), &k))
+    {
+        if (j == k)
+        {
+            return replace(c, 2, NULL);
+        }
+    }
+    return 0;
+}
+
+/*
+ *  Comparison after loading and duplication.
+ *
+ *  iload_k / aload_k
+ *  dup
+ *  if_icmpeq / if_acmpeq L
+ *  -----
+ *  goto L
+ *
+ *  iload_k / aload_k
+ *  dup
+ *  if_icmpne / if_acmpne L
+ *  -----
+ *  (nothing)
+ */
+int comp_load_dup_reduce(CODE **c)
+{
+    int k, l;
+    if (is_iload(*c, &k) &&
+            is_dup(next(*c)) &&
+            (is_if_icmpeq(next(next(*c)), &l) ||
+             is_if_icmpge(next(next(*c)), &l) ||
+             is_if_icmple(next(next(*c)), &l)
+            )
+       )
+    {
+        return replace(c, 3, makeCODEgoto(l, NULL));
+    }
+    if (is_aload(*c, &k) &&
+            is_dup(next(*c)) &&
+            is_if_acmpeq(next(next(*c)), &l)
+       )
+    {
+        return replace(c, 3, makeCODEgoto(l, NULL));
+    }
+    if (is_iload(*c, &k) &&
+            is_dup(next(*c)) &&
+            (is_if_icmpne(next(next(*c)), &l) ||
+             is_if_icmpgt(next(next(*c)), &l) ||
+             is_if_icmplt(next(next(*c)), &l)
+            )
+       )
+    {
+        droplabel(l);
+        return replace(c, 3, NULL);
+    }
+    if (is_aload(*c, &k) &&
+            is_dup(next(*c)) &&
+            is_if_acmpne(next(next(*c)), &l)
+       )
+    {
+        droplabel(l);
+        return replace(c, 3, NULL);
+    }
+    return 0;
+}
+
+/*
+ *  Unnecessary goto.
+ *
+ *  goto L
+ *  L:
+ *  -----
+ *  L: // reduce ref count for L
+ */
+int remove_crazy_goto(CODE **c)
+{
+    int l1, l2;
+    if (is_goto(*c, &l1) &&
+            is_label(next(*c), &l2)
+       )
+    {
+        if (l1 == l2)
+        {
+            droplabel(l1);
+            return replace(c, 1, NULL);
+        }
+    }
+    return 0;
+}
+
+/*
     iconst_0
     ifeq l
     ----------------
@@ -550,6 +661,9 @@ void init_patterns(void)
     ADD_PATTERN(aconst_null_reduce);
     ADD_PATTERN(const_if_eval);
     ADD_PATTERN(zero_comparison_simplify);
+    ADD_PATTERN(useless_load_store);
+    ADD_PATTERN(comp_load_dup_reduce);
+    ADD_PATTERN(remove_crazy_goto);
 
     /*
      *  Make sure the following pattern is
