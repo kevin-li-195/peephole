@@ -766,6 +766,42 @@ int remove_div_by_mone(CODE ** c) {
     iload_j / aload_j / iconst_j / aconst_null / ldc x
 */
 
+int remove_redundant_pop(CODE **c) {
+    int l1; 
+    if(
+        is_iload(*c, &l1) &&
+        is_pop(next(*c))
+        ) 
+    {
+        replace_modified(c,2,NULL); 
+    }
+    if(
+        is_aload(*c, &l1) &&
+        is_pop(next(*c))
+        ) 
+    {
+        replace_modified(c,2,NULL); 
+    }
+
+    if(
+        is_aconst_null(*c) &&
+        is_pop(next(*c))
+        ) 
+    {
+        replace_modified(c,2,NULL); 
+    }
+
+    if(
+        is_ldc_int(*c, &l1) &&
+        is_pop(next(*c))
+        ) 
+    {
+        replace_modified(c,2,NULL); 
+    }
+    
+    return 0; 
+}
+
 int remove_unnecessary_swap(CODE **c) {
     int l1,l2;
 
@@ -1358,7 +1394,8 @@ void init_patterns(void)
     ADD_PATTERN(remove_sub_zero); 
     ADD_PATTERN(remove_null_checkcast); 
     ADD_PATTERN(remove_div_by_one); 
-    ADD_PATTERN(remove_div_by_mone); 
+    ADD_PATTERN(remove_div_by_mone);
+    ADD_PATTERN(remove_unnecessary_swap);  
     ADD_PATTERN(dup_unroll_swap);
 
     /*
