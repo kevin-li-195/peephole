@@ -623,6 +623,126 @@ int remove_crazy_goto(CODE **c)
 }
 
 /*
+* iconst_0
+* iload_k
+* isub
+* -------
+* iload_k
+* ineg
+*/
+int remove_sub_from_zero(CODE ** c) {
+    int l1, l2;
+    if(is_ldc_int(*c,&l1) &&
+       is_iload(next(*c), &l2) &&
+       is_isub(next(next(*c)))) {
+        if (l1 == 0) { /* we can replace */
+           return replace(c, 3, makeCODEiload(l2,makeCODEineg(NULL))); 
+        } else { /*we must leave it as is*/
+            return 0; 
+        }
+
+    }
+    return 0; 
+}
+
+/*
+* iload_k
+* ldc 0
+* isub
+* -----------
+* iload k
+*/
+
+int remove_sub_zero(CODE ** c) {
+    int l1,l2; 
+    if (
+        is_iload(*c,&l1) &&
+        is_ldc_int(next(*c),&l2) &&
+        is_isub(next(next(*c)))
+        )
+        {
+            if(l2 == 0) {
+                return replace(c,3, makeCODEiload(l1,NULL)); 
+            } else {
+            /*cannot reduce*/
+                return 0; 
+            }
+        }
+    /*pattern does not match*/
+    return 0; 
+}
+
+/*
+* aconst_null
+* checkcast
+* ---------
+* aconst_null
+*/
+
+int remove_null_checkcast(CODE ** c) {
+    char * arg; 
+    if(
+        is_aconst_null(*c) &&
+        is_checkcast(next(*c),&arg) 
+        ) 
+    {
+        return replace(c, 2, makeCODEaconst_null(NULL)); 
+    }
+    /*pattern does not match*/
+    return 0; 
+}
+
+/*
+*
+*ldc_1
+*idiv
+*----------
+* 
+*/
+
+int remove_div_by_one(CODE ** c) {
+   int l1; 
+   if(
+        is_ldc_int(*c, &l1) &&
+        is_idiv(next(*c))
+    ) {
+        if(l1 == 1) {
+            return replace_modified(c,2, NULL); 
+        }
+   }
+   /*
+    Pattern does not match
+   */
+   return 0; 
+}
+
+
+/*
+*
+*ldc_-1
+*idiv
+*----------
+* ineg
+*/
+
+int remove_div_by_mone(CODE ** c) {
+   int l1; 
+   if(
+        is_ldc_int(*c, &l1) &&
+        is_idiv(next(*c))
+    ) {
+        if(l1 == -1) {
+            return replace(c,2,makeCODEineg(NULL)); 
+        }
+   }
+   /*
+    Pattern does not match
+   */
+   return 0; 
+}
+
+
+/*
     iconst_0
     ifeq l
     ----------------
@@ -664,7 +784,9 @@ void init_patterns(void)
     ADD_PATTERN(useless_load_store);
     ADD_PATTERN(comp_load_dup_reduce);
     ADD_PATTERN(remove_crazy_goto);
-
+    ADD_PATTERN(remove_sub_from_zero); 
+    ADD_PATTERN(remove_sub_zero); 
+    ADD_PATTERN(remove_null_checkcast); 
     /*
      *  Make sure the following pattern is
      *  always last.
