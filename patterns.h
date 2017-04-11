@@ -1,4 +1,12 @@
 /*
+ *  COMP 520 Group 5 Peephole Optimizer
+ *
+ *  Members who contributed:
+ *  Kevin Li (260565522)
+ *  Alexandre Laporte (260635979)
+ */
+
+/*
  * JOOS is Copyright (C) 1997 Laurie Hendren & Michael I. Schwartzbach
  *
  * Reproduction of all or part of this software is permitted for
@@ -1854,6 +1862,88 @@ int simplify_putfield_load_pop(CODE **c)
     return 0;
 }
 
+/*
+ *  dup
+ *  aload_k
+ *  swap
+ *  putfield
+ *  pop
+ *  ------
+ *  aload_k
+ *  swap
+ *  putfield
+ */
+int simplify_putfield_dup_pop(CODE **c)
+{
+    int k;
+    char *arg;
+    if (is_dup(*c) &&
+            is_aload(next(*c), &k) &&
+            is_swap(nextby(*c, 2)) &&
+            is_putfield(nextby(*c, 3), &arg) &&
+            is_pop(nextby(*c, 4))
+       )
+    {
+        return replace(c, 5,
+                makeCODEaload(k,
+                    makeCODEswap(
+                        makeCODEputfield(
+                            arg,
+                            NULL
+                            )
+                        )
+                    )
+                );
+    }
+    return 0;
+}
+
+/*
+ *  Putting something into a field and getting
+ *  it back out is unnecessary with duplication.
+ *  Required that fs and ks are equal.
+ *
+ *  aload_k
+ *  swap
+ *  putfield_f
+ *  aload_k
+ *  getfield_f
+ *  ------
+ *  dup
+ *  aload_k
+ *  swap
+ *  putfield_f
+ */
+int redundant_put_get(CODE **c)
+{
+    int k1, k2;
+    char *a1, *a2;
+    if (is_aload(*c, &k1) &&
+            is_swap(next(*c)) &&
+            is_putfield(nextby(*c, 2), &a1) &&
+            is_aload(nextby(*c, 3), &k2) &&
+            is_getfield(nextby(*c, 4), &a2) &&
+            strcmp(a1, a2) == 0 &&
+            k1 == k2
+       )
+    {
+        return replace(c, 5,
+                makeCODEdup(
+                    makeCODEaload(
+                        k1,
+                        makeCODEswap(
+                            makeCODEputfield(
+                                a1,
+                                NULL
+                                )
+                            )
+                        )
+                    )
+                );
+    }
+    return 0;
+}
+
 void init_patterns(void)
 {
     ADD_PATTERN(allow_pattern_application);
@@ -1886,6 +1976,8 @@ void init_patterns(void)
     ADD_PATTERN(invert_comp_goto); 
     ADD_PATTERN(remove_unreachable_code); 
     ADD_PATTERN(simplify_putfield_load_pop);
+    ADD_PATTERN(simplify_putfield_dup_pop);
+    ADD_PATTERN(redundant_put_get);
     /*
      *  Make sure the following pattern is
      *  always last.
