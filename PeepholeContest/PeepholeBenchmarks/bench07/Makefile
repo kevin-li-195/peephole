@@ -1,17 +1,17 @@
-ROOMACTIONS = RoomAction.java BFRoomAction.java FeastRoomAction.java CoinRoomAction.java EmptyRoomAction.java GrueRoomAction.java TreasureRoomAction.java FactorialRoomAction.java HuntRoomAction.java ExitRoomAction.java JokeRoomAction.java
+all: clean
+	$(PEEPDIR)/joosc *.java
 
-SRC = $(ROOMACTIONS) Room.java GrueHunt.java InGenerate.java
+opt: clean
+	$(PEEPDIR)/joosc -O *.java
 
-GrueHunt: $(SRC)
-	javac $(SRC)
+java:
+	javac *.java
 
-joos: $(SRC)
-	$(PEEPDIR)/joosc $(SRC)
+clean:	
+	rm -rf *.class *.j *~ newout
 
-gen:
-	javac InGenerate.java
-	java InGenerate > in1
+run:
+	java -classpath "../../jooslib.jar:." GrueHunt < in1
 
-clean:
-	rm *.class *.j
-
+diff:
+	java -classpath "../../jooslib.jar:." GrueHunt < in1 > newout; tail -10 newout 

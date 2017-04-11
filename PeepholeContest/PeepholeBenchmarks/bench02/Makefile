@@ -1,14 +1,17 @@
-# assumes sablecc script is on your PATH
-
-# to compile the code
-joosc: clean
+all: clean
 	$(PEEPDIR)/joosc *.java
 
-java: clean
+opt: clean
+	$(PEEPDIR)/joosc -O *.java
+
+java:
 	javac *.java
 
-check:	
-	./check.py
-
 clean:	
-	rm -rf *.class *.j
+	rm -rf *.class *.j *~ newout
+
+run:
+	java -classpath "../../jooslib.jar:." Main < in1
+
+diff:
+	java -classpath "../../jooslib.jar:." Main < in1 > newout; diff out1 newout

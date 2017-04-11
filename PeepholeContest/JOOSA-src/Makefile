@@ -22,5 +22,5 @@ lex.yy.c:		joos.l y.tab.h
 			flex joos.l
 
 clean:
-	rm *.o lex.* y.tab.*
+	rm *.o lex.* y.tab.* joos
 
