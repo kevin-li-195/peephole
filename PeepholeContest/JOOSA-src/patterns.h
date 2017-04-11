@@ -19,6 +19,8 @@
  *                               iadd
  */
 
+#include <stdlib.h>
+
 typedef struct BACKTRACK 
 {
     CODE **code;
@@ -123,7 +125,6 @@ int prevAddr = 0;
 
 int make_backtrack(CODE **c)
 {
-    prevAddr = (int) c;
     BACKTRACK *b = malloc(sizeof(BACKTRACK));
     b->prev = previousCode;
     b->code = c;
@@ -132,6 +133,7 @@ int make_backtrack(CODE **c)
     return 0;
 }
 
+/*
 void printBacktrack()
 {
     BACKTRACK *b = previousCode;
@@ -143,7 +145,7 @@ void printBacktrack()
     }
     fprintf(stderr, "Done\n");
 }
-
+*/
 
 int remove_nop(CODE **c)
 {
@@ -155,41 +157,79 @@ int remove_nop(CODE **c)
     return 0;
 }
 
+int test_invokevirtual(CODE **c)
+{
+    char *cs;
+    if (is_invokevirtual(*c, &cs))
+    {
+        fprintf(stderr, "function name: '%s'\n",
+                cs);
+    }
+    return 0;
+}
 
 /*
-	iconst_0
-	ifeq l
-	----------------
-	goto l
+ *     invokevirtual (java/lang/String/concat (Ljava/lang/String;)Ljava/lang/String;)
+ *     dup
+ *     ifnull L
+ *     ------
+ *     invokevirtual (java/lang/String/concat (Ljava/lang/String;)Ljava/lang/String;)
+ */
+int remove_null_check_string_concat(CODE **c)
+{
+    int l;
+    char *cs;
+    if (is_invokevirtual(*c, &cs) &&
+            is_dup(next(*c)) &&
+            is_ifnull(next(next(*c)), &l))
+    {
+        /*
+        Only when the string concatenation function is run. Null is never returned
+        from the string concat, because any null string passed to string concat
+        results in a runtime error.
+        */
+        if (strcmp(cs, "java/lang/String/concat(Ljava/lang/String;)Ljava/lang/String;") == 0)
+        {
+            droplabel(l);
+            return replace(c, 3, makeCODEinvokevirtual(cs, NULL));
+        }
+    }
+    return 0;
+}
 
-	iconst_0
-	ifge l
-	-------------
-	goto l
+/*
+    iconst_0
+    ifeq l
+    ----------------
+    goto l
 
-	iconst_0
-	ifgt l
-	-------
-	(nothing)
+    iconst_0
+    ifge l
+    -------------
+    goto l
 
-	iconst_0
-	ifne l
-	-------------
-	(Nothing)
+    iconst_0
+    ifgt l
+    -------
+    (nothing)
 
-
+    iconst_0
+    ifne l
+    -------------
+    (Nothing)
 */
 
 
 
 void init_patterns(void) 
 {
-	ADD_PATTERN(simplify_multiplication_right);
-	ADD_PATTERN(simplify_astore);
-	ADD_PATTERN(positive_increment);
-	ADD_PATTERN(simplify_goto_goto);
-	ADD_PATTERN(remove_dup_pop);
-	ADD_PATTERN(remove_nop);
+    ADD_PATTERN(simplify_multiplication_right);
+    ADD_PATTERN(simplify_astore);
+    ADD_PATTERN(positive_increment);
+    ADD_PATTERN(simplify_goto_goto);
+    ADD_PATTERN(remove_dup_pop);
+    ADD_PATTERN(remove_nop);
+    ADD_PATTERN(remove_null_check_string_concat);
 
     /*
      *  Make sure the following pattern is
