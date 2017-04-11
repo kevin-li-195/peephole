@@ -147,12 +147,26 @@ void printBacktrack()
 }
 */
 
+/*
+ *  Apparently nops can only be removed if they
+ *  follow return statements.
+ *
+ *  areturn / ireturn
+ *  nop
+ *  -----
+ *  areturn / ireturn
+ */
 int remove_nop(CODE **c)
 {
-    if (is_nop(*c))
+    if (is_areturn(*c) &&
+            is_nop(next(*c)))
     {
-        kill_line(c);
-        return 1;
+        return replace(c, 2, makeCODEareturn(NULL));
+    }
+    if (is_ireturn(*c) &&
+            is_nop(next(*c)))
+    {
+        return replace(c, 2, makeCODEireturn(NULL));
     }
     return 0;
 }
@@ -623,6 +637,363 @@ int remove_crazy_goto(CODE **c)
 }
 
 /*
+ *  Dup unrolling for swap operations
+ *
+ *  iload_j / aload_j / ldc j / aconst_null
+ *  dup
+ *  iload_k / aload_k / ldc k / aconst_null
+ *  swap
+ *  -----
+ *  iload_j / aload_j / ldc j / aconst_null
+ *  iload_k / aload_k / ldc k / aconst_null
+ *  iload_j / aload_j / ldc j / aconst_null
+ */
+int dup_unroll_swap(CODE **c)
+{
+    int j, k;
+    char *s;
+    char *outer;
+    if (is_iload(*c, &j) &&
+            is_dup(next(*c))
+       )
+    {
+        if (is_iload(nextby(*c, 2), &k) &&
+                is_swap(nextby(*c, 3))
+           )
+        {
+            return replace(c, 4,
+                    makeCODEiload(j,
+                        makeCODEiload(k,
+                            makeCODEiload(j, NULL)
+                            )
+                        )
+                    );
+        }
+        if (is_aload(nextby(*c, 2), &k) &&
+                is_swap(nextby(*c, 3))
+           )
+        {
+            return replace(c, 4,
+                    makeCODEiload(j,
+                        makeCODEaload(k,
+                            makeCODEiload(j, NULL)
+                            )
+                        )
+                    );
+        }
+        if (is_ldc_int(nextby(*c, 2), &k) &&
+                is_swap(nextby(*c, 3))
+           )
+        {
+            return replace(c, 4,
+                    makeCODEiload(j,
+                        makeCODEldc_int(k,
+                            makeCODEiload(j, NULL)
+                            )
+                        )
+                    );
+        }
+        if (is_ldc_string(nextby(*c, 2), &s) &&
+                is_swap(nextby(*c, 3))
+           )
+        {
+            return replace(c, 4,
+                    makeCODEiload(j,
+                        makeCODEldc_string(s,
+                            makeCODEiload(j, NULL)
+                            )
+                        )
+                    );
+        }
+        if (is_aconst_null(nextby(*c, 2)) &&
+                is_swap(nextby(*c, 3))
+           )
+        {
+            return replace(c, 4,
+                    makeCODEiload(j,
+                        makeCODEaconst_null(
+                            makeCODEiload(j, NULL)
+                            )
+                        )
+                    );
+        }
+    }
+    /*
+     *  aload is outer
+     */
+    if (is_aload(*c, &j) &&
+            is_dup(next(*c))
+       )
+    {
+        if (is_iload(nextby(*c, 2), &k) &&
+                is_swap(nextby(*c, 3))
+           )
+        {
+            return replace(c, 4,
+                    makeCODEaload(j,
+                        makeCODEiload(k,
+                            makeCODEaload(j, NULL)
+                            )
+                        )
+                    );
+        }
+        if (is_aload(nextby(*c, 2), &k) &&
+                is_swap(nextby(*c, 3))
+           )
+        {
+            return replace(c, 4,
+                    makeCODEaload(j,
+                        makeCODEaload(k,
+                            makeCODEaload(j, NULL)
+                            )
+                        )
+                    );
+        }
+        if (is_ldc_int(nextby(*c, 2), &k) &&
+                is_swap(nextby(*c, 3))
+           )
+        {
+            return replace(c, 4,
+                    makeCODEaload(j,
+                        makeCODEldc_int(k,
+                            makeCODEaload(j, NULL)
+                            )
+                        )
+                    );
+        }
+        if (is_ldc_string(nextby(*c, 2), &s) &&
+                is_swap(nextby(*c, 3))
+           )
+        {
+            return replace(c, 4,
+                    makeCODEaload(j,
+                        makeCODEldc_string(s,
+                            makeCODEaload(j, NULL)
+                            )
+                        )
+                    );
+        }
+        if (is_aconst_null(nextby(*c, 2)) &&
+                is_swap(nextby(*c, 3))
+           )
+        {
+            return replace(c, 4,
+                    makeCODEaload(j,
+                        makeCODEaconst_null(
+                            makeCODEaload(j, NULL)
+                            )
+                        )
+                    );
+        }
+    }
+    /*
+     *  ldc_int is outer
+     */
+    if (is_ldc_int(*c, &j) &&
+            is_dup(next(*c))
+       )
+    {
+        if (is_iload(nextby(*c, 2), &k) &&
+                is_swap(nextby(*c, 3))
+           )
+        {
+            return replace(c, 4,
+                    makeCODEldc_int(j,
+                        makeCODEiload(k,
+                            makeCODEldc_int(j, NULL)
+                            )
+                        )
+                    );
+        }
+        if (is_aload(nextby(*c, 2), &k) &&
+                is_swap(nextby(*c, 3))
+           )
+        {
+            return replace(c, 4,
+                    makeCODEldc_int(j,
+                        makeCODEaload(k,
+                            makeCODEldc_int(j, NULL)
+                            )
+                        )
+                    );
+        }
+        if (is_ldc_int(nextby(*c, 2), &k) &&
+                is_swap(nextby(*c, 3))
+           )
+        {
+            return replace(c, 4,
+                    makeCODEldc_int(j,
+                        makeCODEldc_int(k,
+                            makeCODEldc_int(j, NULL)
+                            )
+                        )
+                    );
+        }
+        if (is_ldc_string(nextby(*c, 2), &s) &&
+                is_swap(nextby(*c, 3))
+           )
+        {
+            return replace(c, 4,
+                    makeCODEldc_int(j,
+                        makeCODEldc_string(s,
+                            makeCODEldc_int(j, NULL)
+                            )
+                        )
+                    );
+        }
+        if (is_aconst_null(nextby(*c, 2)) &&
+                is_swap(nextby(*c, 3))
+           )
+        {
+            return replace(c, 4,
+                    makeCODEldc_int(j,
+                        makeCODEaconst_null(
+                            makeCODEldc_int(j, NULL)
+                            )
+                        )
+                    );
+        }
+    }
+    /*
+     *  ldc_string is outer
+     */
+    if (is_ldc_string(*c, &outer) &&
+            is_dup(next(*c))
+       )
+    {
+        if (is_iload(nextby(*c, 2), &k) &&
+                is_swap(nextby(*c, 3))
+           )
+        {
+            return replace(c, 4,
+                    makeCODEldc_string(outer,
+                        makeCODEiload(k,
+                            makeCODEldc_string(outer, NULL)
+                            )
+                        )
+                    );
+        }
+        if (is_aload(nextby(*c, 2), &k) &&
+                is_swap(nextby(*c, 3))
+           )
+        {
+            return replace(c, 4,
+                    makeCODEldc_string(outer,
+                        makeCODEaload(k,
+                            makeCODEldc_string(outer, NULL)
+                            )
+                        )
+                    );
+        }
+        if (is_ldc_int(nextby(*c, 2), &k) &&
+                is_swap(nextby(*c, 3))
+           )
+        {
+            return replace(c, 4,
+                    makeCODEldc_string(outer,
+                        makeCODEldc_int(k,
+                            makeCODEldc_string(outer, NULL)
+                            )
+                        )
+                    );
+        }
+        if (is_ldc_string(nextby(*c, 2), &s) &&
+                is_swap(nextby(*c, 3))
+           )
+        {
+            return replace(c, 4,
+                    makeCODEldc_string(outer,
+                        makeCODEldc_string(s,
+                            makeCODEldc_string(outer, NULL)
+                            )
+                        )
+                    );
+        }
+        if (is_aconst_null(nextby(*c, 2)) &&
+                is_swap(nextby(*c, 3))
+           )
+        {
+            return replace(c, 4,
+                    makeCODEldc_string(outer,
+                        makeCODEaconst_null(
+                            makeCODEldc_string(outer, NULL)
+                            )
+                        )
+                    );
+        }
+    }
+    /*
+     *  aconst_null is outer
+     */
+    if (is_aconst_null(*c) &&
+            is_dup(next(*c))
+       )
+    {
+        if (is_iload(nextby(*c, 2), &k) &&
+                is_swap(nextby(*c, 3))
+           )
+        {
+            return replace(c, 4,
+                    makeCODEaconst_null(
+                        makeCODEiload(k,
+                            makeCODEaconst_null(NULL)
+                            )
+                        )
+                    );
+        }
+        if (is_aload(nextby(*c, 2), &k) &&
+                is_swap(nextby(*c, 3))
+           )
+        {
+            return replace(c, 4,
+                    makeCODEaconst_null(
+                        makeCODEaload(k,
+                            makeCODEaconst_null(NULL)
+                            )
+                        )
+                    );
+        }
+        if (is_ldc_int(nextby(*c, 2), &k) &&
+                is_swap(nextby(*c, 3))
+           )
+        {
+            return replace(c, 4,
+                    makeCODEaconst_null(
+                        makeCODEldc_int(k,
+                            makeCODEaconst_null(NULL)
+                            )
+                        )
+                    );
+        }
+        if (is_ldc_string(nextby(*c, 2), &s) &&
+                is_swap(nextby(*c, 3))
+           )
+        {
+            return replace(c, 4,
+                    makeCODEaconst_null(
+                        makeCODEldc_string(s,
+                            makeCODEaconst_null(NULL)
+                            )
+                        )
+                    );
+        }
+        if (is_aconst_null(nextby(*c, 2)) &&
+                is_swap(nextby(*c, 3))
+           )
+        {
+            return replace(c, 4,
+                    makeCODEaconst_null(
+                        makeCODEaconst_null(
+                            makeCODEaconst_null(NULL)
+                            )
+                        )
+                    );
+        }
+    }
+    return 0;
+}
+
+/*
     iconst_0
     ifeq l
     ----------------
@@ -664,6 +1035,7 @@ void init_patterns(void)
     ADD_PATTERN(useless_load_store);
     ADD_PATTERN(comp_load_dup_reduce);
     ADD_PATTERN(remove_crazy_goto);
+    ADD_PATTERN(dup_unroll_swap);
 
     /*
      *  Make sure the following pattern is
