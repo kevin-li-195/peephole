@@ -798,7 +798,52 @@ int remove_redundant_pop(CODE **c) {
     {
         replace_modified(c,2,NULL); 
     }
-    
+
+    return 0; 
+}
+
+
+int compare_after_dup(CODE **c) {
+    int l1; 
+    int label; 
+    if(
+        is_iload(*c, &l1) &&
+        is_dup(next(*c)) &&
+        is_if_icmpne(next(next(*c)), &label)
+        )
+    {   
+        droplabel(label); 
+        replace_modified(c,3,0); 
+    }
+     if(
+        is_iload(*c, &l1) &&
+        is_dup(next(*c)) &&
+        is_if_icmpgt(next(next(*c)), &label)
+        )
+    {   
+        droplabel(label); 
+        replace_modified(c,3,0); 
+    }
+
+     if(
+        is_iload(*c, &l1) &&
+        is_dup(next(*c)) &&
+        is_if_icmplt(next(next(*c)), &label)
+        )
+    {   
+        droplabel(label); 
+        replace_modified(c,3,0); 
+    }
+
+     if(
+        is_aload(*c, &l1) &&
+        is_dup(next(*c)) &&
+        is_if_acmpne(next(next(*c)), &label)
+        )
+    {   
+        droplabel(label); 
+        replace_modified(c,3,0); 
+    }
     return 0; 
 }
 
