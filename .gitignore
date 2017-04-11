@@ -3,3 +3,5 @@
 *.dump
 *.optdump
 *.swp
+PeepholeContest
+PeepholeContest/*
