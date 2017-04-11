@@ -756,6 +756,144 @@ int remove_div_by_mone(CODE ** c) {
    return 0; 
 }
 
+
+/* Remove non needed swaps
+    iload_j / aload_j / iconst_j / aconst_null / ldc x
+    iload_k / aload_k / iconst_k / aconst_null / ldc y
+    swap
+    -----
+    iload_k / aload_k / iconst_k / aconst_null / ldc y
+    iload_j / aload_j / iconst_j / aconst_null / ldc x
+*/
+
+int remove_unnecessary_swap(CODE **c) {
+    int l1,l2;
+
+    if(
+        is_iload(*c,&l1) &&
+        is_iload(next(*c), &l2) &&
+        is_swap(next(next(*c)))
+    ) {
+        return replace(c,3,makeCODEiload(l2,makeCODEiload(l1,NULL))); 
+    }
+    if(
+        is_iload(*c,&l1) &&
+        is_aload(next(*c), &l2) &&
+        is_swap(next(next(*c)))
+    ) {
+        return replace(c,3,makeCODEaload(l2,makeCODEiload(l1,NULL))); 
+    }
+    if(
+        is_aload(*c,&l1) &&
+        is_iload(next(*c), &l2) &&
+        is_swap(next(next(*c)))
+    ) {
+        return replace(c,3,makeCODEiload(l2,makeCODEaload(l1, NULL))); 
+    }
+     if(
+        is_aload(*c,&l1) &&
+        is_aload(next(*c), &l2) &&
+        is_swap(next(next(*c)))
+    ) {
+        return replace(c,3,makeCODEaload(l2,makeCODEaload(l1, NULL))); 
+    }
+
+
+     if(
+        is_ldc_int(*c,&l1) &&
+        is_ldc_int(next(*c), &l2) &&
+        is_swap(next(next(*c)))
+    ) {
+        return replace(c,3,makeCODEldc_int(l2,makeCODEldc_int(l1, NULL))); 
+    }
+
+     if(
+        is_ldc_int(*c,&l1) &&
+        is_iload(next(*c), &l2) &&
+        is_swap(next(next(*c)))
+    ) {
+        return replace(c,3,makeCODEiload(l2,makeCODEldc_int(l1, NULL))); 
+    }
+
+     if(
+        is_iload(*c,&l1) &&
+        is_ldc_int(next(*c), &l2) &&
+        is_swap(next(next(*c)))
+    ) {
+        return replace(c,3,makeCODEldc_int(l2,makeCODEiload(l1, NULL))); 
+    }
+
+     if(
+        is_ldc_int(*c,&l1) &&
+        is_aload(next(*c), &l2) &&
+        is_swap(next(next(*c)))
+    ) {
+        return replace(c,3,makeCODEaload(l2,makeCODEldc_int(l1, NULL))); 
+    }
+
+     if(
+        is_aload(*c,&l1) &&
+        is_ldc_int(next(*c), &l2) &&
+        is_swap(next(next(*c)))
+    ) {
+        return replace(c,3,makeCODEldc_int(l2,makeCODEaload(l1, NULL))); 
+    }
+
+
+     if(
+        is_ldc_int(*c,&l1) &&
+        is_aconst_null(next(*c)) &&
+        is_swap(next(next(*c)))
+    ) {
+        return replace(c,3,makeCODEaconst_null(makeCODEldc_int(l1, NULL))); 
+    }
+
+     if(
+        is_aconst_null(*c) &&
+        is_ldc_int(next(*c), &l2) &&
+        is_swap(next(next(*c)))
+    ) {
+        return replace(c,3,makeCODEldc_int(l2,makeCODEaconst_null(NULL))); 
+    }
+
+
+     if(
+        is_aconst_null(*c) &&
+        is_iload(next(*c), &l2) &&
+        is_swap(next(next(*c)))
+    ) {
+        return replace(c,3,makeCODEiload(l2,makeCODEaconst_null(NULL))); 
+    }
+
+    if(
+            is_iload(*c,&l1) &&
+            is_aconst_null(next(*c)) &&
+            is_swap(next(next(*c)))
+        ) {
+            return replace(c,3,makeCODEaconst_null(makeCODEiload(l1, NULL))); 
+        }
+    return 0; 
+     if(
+            is_aconst_null(*c) &&
+            is_aload(next(*c), &l2) &&
+            is_swap(next(next(*c)))
+        ) {
+            return replace(c,3,makeCODEaload(l2,makeCODEaconst_null(NULL))); 
+        }
+
+    if(
+            is_aload(*c,&l1) &&
+            is_aconst_null(next(*c)) &&
+            is_swap(next(next(*c)))
+        ) {
+            return replace(c,3,makeCODEaconst_null(makeCODEaload(l1, NULL))); 
+        }
+    return 0; 
+
+
+
+}
+
 /*
     This transofrmation is required to ensure our patterns hold
     iloadk / aload k / iconst_k / aconst_null
