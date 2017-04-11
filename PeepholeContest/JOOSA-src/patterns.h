@@ -247,6 +247,37 @@ int drop_dead_labels(CODE **c)
 }
 
 /*
+ *  Duplication, single storage, then
+ *  pop should be reduced to simply
+ *  consumption.
+ *
+ *  dup
+ *  istore_k / astore_k
+ *  pop
+ *  ------
+ *  istore_k / astore_k
+ */
+int remove_useless_dup_consume_pop(CODE **c)
+{
+    int l;
+    if (is_dup(*c) &&
+            is_pop(next(next(*c))))
+    {
+        if (is_istore(next(*c), &l))
+        {
+            return replace(c, 3,
+                    makeCODEistore(l, NULL));
+        }
+        if (is_astore(next(*c), &l))
+        {
+            return replace(c, 3,
+                    makeCODEastore(l, NULL));
+        }
+    }
+    return 0;
+}
+
+/*
     iconst_0
     ifeq l
     ----------------
@@ -279,6 +310,7 @@ void init_patterns(void)
     ADD_PATTERN(remove_null_check_string_concat);
     ADD_PATTERN(remove_null_check_after_ldc);
     ADD_PATTERN(drop_dead_labels);
+    ADD_PATTERN(remove_useless_dup_consume_pop);
 
     /*
      *  Make sure the following pattern is
