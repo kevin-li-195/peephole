@@ -1701,6 +1701,16 @@ int dup_unroll_swap(CODE **c)
     return 0;
 }
 
+/*
+* Here there is no way to access the code between the goto and the label as the intermediate code is unlabeled
+* goto L:
+* (dead code without label that cannot be reached)
+* L:
+*-----------------
+* goto L: 
+* L:
+*
+*/
 int remove_unreachable_code(CODE ** c) {
     CODE * current = *c;  
     int l1,l2;
@@ -1725,6 +1735,7 @@ int remove_unreachable_code(CODE ** c) {
             return 0; 
         } else if(l2 == l1) {
             /*we must remove 'count' many instructions and replace with a single goto */
+            /*could probably pass in null but we will allow other patterns no remove the GOTO l: l: simplification*/
            return replace(c,count,makeCODEgoto(l1,NULL)); 
         }
      }
